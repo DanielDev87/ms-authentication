@@ -1,0 +1,8 @@
+apply plugin: 'java-library'
+
+dependencies {
+    // Dependencia para anotaciones como @Data, @Builder, etc.
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+}

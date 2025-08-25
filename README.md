@@ -1,3 +1,56 @@
+## Historia de Usuario: Registrar usuarios en el sistema
+
+**ID:** 1  
+**Título:** Registrar usuarios en el sistema
+
+### Descripción
+Como **administrador del sistema**,  
+quiero **registrar un nuevo usuario proporcionando sus datos personales básicos (nombres y apellidos por separado)**,  
+para **mantener un registro claro y ordenado de los clientes potenciales**.
+
+### Microservicio
+- **Nombre:** AUTENTICACION
+- **Framework:** WebFlux
+- **Arquitectura:** Hexagonal (separando dominio e infraestructura)
+- **Endpoint:** `POST /api/v1/usuarios`
+
+### Reglas y Validaciones
+- Los campos **nombres, apellidos, correo_electronico y salario_base** no deben ser nulos ni vacíos.
+- El **correo_electronico** debe ser único y no estar previamente registrado.
+- El **correo_electronico** debe cumplir con un formato válido.
+- El **salario_base** debe ser un valor numérico en el rango `0 - 15,000,000`.
+- Deben validarse los formatos correctos de los datos de entrada.
+
+### Datos del Solicitante
+- `nombres`
+- `apellidos`
+- `fecha_nacimiento`
+- `direccion`
+- `telefono`
+- `correo_electronico`
+- `salario_base`
+
+### Criterios de Aceptación
+1. El sistema permite registrar un nuevo solicitante con los campos obligatorios completos.
+2. Si alguno de los campos requeridos es nulo o vacío, el sistema devuelve un error controlado.
+3. Si el correo ya existe en la base de datos, el sistema devuelve un error de duplicidad.
+4. Si los formatos no son válidos (correo, salario numérico, etc.), el sistema devuelve un error de validación.
+5. Una vez registrado correctamente, el solicitante queda guardado **permanentemente en la base de datos**.
+
+### Consideraciones Técnicas
+- Persistencia transaccional con anotación `@Transactional` para garantizar atomicidad.
+- Logs de traza para monitoreo del proceso de registro.
+- Manejo centralizado de excepciones, evitando mensajes inesperados para el consumidor de la API.
+
+
+
+
+
+
+
+
+
+
 # Proyecto Base Implementando Clean Architecture
 
 ## Antes de Iniciar

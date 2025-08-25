@@ -1,44 +1,27 @@
 package co.com.bancolombia.config;
 
+import co.com.bancolombia.model.user.gateways.UserRepository;
+import co.com.bancolombia.usecase.createuser.UserRegisterUseCase;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 
-public class UseCasesConfigTest {
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@SpringBootTest(classes = UseCasesConfig.class) // 1. Carga solo tu configuración de Casos de Uso
+class UseCasesConfigTest {
+
+    @Autowired // 2. Pide a Spring que inyecte el bean que queremos probar
+    private UserRegisterUseCase userRegisterUseCase;
+
+    @MockBean // 3. Provee un mock para la dependencia que necesita el UseCase
+    private UserRepository<U, U1, Number, ReactiveCrudRepository> userRepository;
 
     @Test
-    void testUseCaseBeansExist() {
-        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(TestConfig.class)) {
-            String[] beanNames = context.getBeanDefinitionNames();
-
-            boolean useCaseBeanFound = false;
-            for (String beanName : beanNames) {
-                if (beanName.endsWith("UseCase")) {
-                    useCaseBeanFound = true;
-                    break;
-                }
-            }
-
-            assertTrue(useCaseBeanFound, "No beans ending with 'Use Case' were found");
-        }
-    }
-
-    @Configuration
-    @Import(UseCasesConfig.class)
-    static class TestConfig {
-
-        @Bean
-        public MyUseCase myUseCase() {
-            return new MyUseCase();
-        }
-    }
-
-    static class MyUseCase {
-        public String execute() {
-            return "MyUseCase Test";
-        }
+    void userRegisterUseCaseBeanShouldBeCreated() {
+        // 4. La prueba es simple: si el bean se inyectó, no será nulo.
+        assertNotNull(userRegisterUseCase, "El bean UserRegisterUseCase no se creó correctamente.");
     }
 }
