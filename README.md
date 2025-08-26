@@ -12,7 +12,7 @@ para **mantener un registro claro y ordenado de los clientes potenciales**.
 - **Nombre:** AUTENTICACION
 - **Framework:** WebFlux
 - **Arquitectura:** Hexagonal (separando dominio e infraestructura)
-- **Endpoint:** `POST /api/v1/usuarios`
+- **Endpoint:** `POST /api/v1/users`
 
 ### Reglas y Validaciones
 - Los campos **nombres, apellidos, correo_electronico y salario_base** no deben ser nulos ni vacíos.
@@ -98,3 +98,108 @@ Los entry points representan los puntos de entrada de la aplicación o el inicio
 Este módulo es el más externo de la arquitectura, es el encargado de ensamblar los distintos módulos, resolver las dependencias y crear los beans de los casos de use (UseCases) de forma automática, inyectando en éstos instancias concretas de las dependencias declaradas. Además inicia la aplicación (es el único módulo del proyecto donde encontraremos la función “public static void main(String[] args)”.
 
 **Los beans de los casos de uso se disponibilizan automaticamente gracias a un '@ComponentScan' ubicado en esta capa.**
+
+# Microservicio de Autenticación (`ms-authentication`)
+
+Este documento detalla la implementación y las pruebas para el microservicio de autenticación, responsable de registrar nuevos solicitantes en el sistema.
+
+## Prerrequisitos
+- El microservicio debe estar ejecutándose en `localhost:8080`.
+- La base de datos PostgreSQL debe estar activa y accesible.
+- La tabla `users` debe existir (creada automáticamente por Flyway al iniciar la aplicación).
+
+---
+## Cómo Probar la API 🧪
+
+Puedes probar el endpoint de creación de usuarios usando Swagger UI (interactivo) o Postman (manual).
+
+### Usando Swagger UI
+1.  **Abre la URL** en tu navegador: `http://localhost:8080/swagger-ui.html`
+2.  **Busca el endpoint** `POST /api/v1/users`.
+3.  **Haz clic en "Try it out"**.
+4.  **Modifica el JSON de ejemplo** en el campo "Request body" con los datos del nuevo solicitante.
+5.  **Haz clic en "Execute"**. La respuesta aparecerá abajo.
+
+
+
+### Usando Postman
+
+#### 1. Petición Exitosa (201 Created)
+Esta petición creará un nuevo usuario correctamente.
+
+- **Método:** `POST`
+- **URL:** `http://localhost:8080/api/v1/users`
+- **Headers:**
+    - `Content-Type`: `application/json`
+- **Body** (raw, JSON):
+```json
+{
+  "firstName": "Daniel",
+  "lastName": "Agudelo",
+  "birthDate": "1990-05-15",
+  "password": "PasswordSeguro123!",
+  "address": "Calle 10 # 43A-20",
+  "phoneNumber": "3012345678",
+  "email": "daniel.agudelo@example.com",
+  "baseSalary": 4500000
+}
+
+## Ejemplos de Peticiones y Respuestas
+
+### 1. Petición Exitosa (201 Created)
+
+**Body de la petición:**
+```json
+{
+  "firstName": "Daniel",
+  "lastName": "Agudelo",
+  "birthDate": "1990-05-15",
+  "password": "PasswordSeguro123!",
+  "address": "Calle 10 # 43A-20",
+  "phoneNumber": "3012345678",
+  "email": "daniel.agudelo@example.com",
+  "baseSalary": 4500000
+}
+
+Respuesta Esperada (Status 201 Created):
+
+{
+    "id": 1,
+    "firstName": "Daniel",
+    "lastName": "Agudelo",
+    "birthDate": "1990-05-15",
+    "password": null,
+    "role": "APPLICANT",
+    "address": "Calle 10 # 43A-20",
+    "phoneNumber": "3012345678",
+    "email": "daniel.agudelo@example.com",
+    "baseSalary": 4500000.00
+}
+
+Nota: La contraseña se retorna como null por seguridad.
+
+<hr></hr>
+2. Petición Fallida (400 Bad Request)
+Esta petición fallará porque el email ya está registrado.
+
+Body de la petición:
+
+{
+  "firstName": "Otro",
+  "lastName": "Usuario",
+  "birthDate": "1992-08-20",
+  "password": "OtraPassword456!",
+  "address": "Carrera 70 # 1-10",
+  "phoneNumber": "3219876543",
+  "email": "daniel.agudelo@example.com",
+  "baseSalary": 3000000
+}
+
+Respuesta Esperada (Status 400 Bad Request):
+
+{
+    "timestamp": "2025-08-25T19:25:00.123456Z",
+    "status": 400,
+    "error": "Bad Request",
+    "message": "El correo electrónico ya está en uso."
+}
