@@ -2,7 +2,6 @@ package co.com.bancolombia.api;
 
 import co.com.bancolombia.api.dto.UserDTO;
 import co.com.bancolombia.model.user.User;
-// Importa el caso de uso correcto
 import co.com.bancolombia.usecase.createuser.CreateUserUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +10,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.transaction.reactive.TransactionalOperator; // <-- Importar
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -20,7 +20,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = ApiRest.class)
-// Importamos la configuración para que Spring sepa qué es un UseCase
 @Import(TestApplication.class)
 class ApiRestTest {
 
@@ -28,26 +27,32 @@ class ApiRestTest {
     private WebTestClient webTestClient;
 
     @MockBean
-    // Usa el nombre del caso de uso correcto
     private CreateUserUseCase createUserUseCase;
+
+    @MockBean
+    private TransactionalOperator transactionalOperator;
 
     @Test
     void registerUserShouldReturnCreated() {
         // Arrange
-        // La petición ahora usa un DTO
         UserDTO userToRegister = new UserDTO();
         userToRegister.setFirstName("Test");
         userToRegister.setLastName("User");
         userToRegister.setEmail("test.user@example.com");
         userToRegister.setPassword("pass");
-        userToRegister.setRole("APPLICANT");
+        userToRegister.setRole(User.Role.APPLICANT);
         userToRegister.setBaseSalary(new BigDecimal("1000"));
         userToRegister.setBirthDate(LocalDate.now());
 
-        User userSaved = User.builder().id(1L).email("test.user@example.com").build();
+        User userSavedInDB = User.builder()
+                .id(1L)
+                .email("test.user@example.com")
+                .firstName("Test")
+                .build();
 
-        // Configura el mock para que use el caso de uso correcto
-        when(createUserUseCase.execute(any(User.class))).thenReturn(Mono.just(userSaved));
+        when(createUserUseCase.execute(any(User.class))).thenReturn(Mono.just(userSavedInDB));
+        // Simula el comportamiento del TransactionalOperator
+        when(transactionalOperator.transactional(any(Mono.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act & Assert
         webTestClient.post().uri("/api/v1/users")
@@ -55,7 +60,12 @@ class ApiRestTest {
                 .bodyValue(userToRegister)
                 .exchange()
                 .expectStatus().isCreated()
-                .expectBody(User.class)
-                .isEqualTo(userSaved);
+                // 2. CORRIGE LA ASERCIÓN: Espera un DTO y valida sus campos
+                .expectBody(UserDTO.class)
+                .value(userResponse -> {
+                    assert userResponse.getId().equals(1L);
+                    assert userResponse.getEmail().equals("test.user@example.com");
+                    assert userResponse.getPassword() == null;
+                });
     }
 }

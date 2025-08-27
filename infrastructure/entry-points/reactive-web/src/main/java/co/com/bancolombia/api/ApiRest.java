@@ -22,34 +22,63 @@ public class ApiRest {
     private final CreateUserUseCase createUserUseCase;
     private final TransactionalOperator transactionalOperator;
 
+    @GetMapping("/hello")
+    public Mono<String> sayHello() {
+        return Mono.just("Hello, World!");
+    }
+
     @PostMapping
-    public Mono<ResponseEntity<User>> createUser(@Valid @RequestBody UserDTO userDTO) {
+    public Mono<ResponseEntity<UserDTO>> createUser(@Valid @RequestBody UserDTO userDTO) {
         log.info("Recibida petición para crear usuario con email: {}", userDTO.getEmail());
-        return createUserUseCase.execute(toModel(userDTO))
+
+
+        Mono<User> userMono = createUserUseCase.execute(toModel(userDTO));
+
+        return userMono
+                .as(transactionalOperator::transactional)
                 .map(userSaved -> {
                     log.info("Usuario creado exitosamente con ID: {}", userSaved.getId());
-                    return ResponseEntity.status(HttpStatus.CREATED).body(userSaved);
+                    return ResponseEntity.status(HttpStatus.CREATED).body(toDTO(userSaved));
                 })
-                // Envuelve toda la operación en una transacción
-                .as(transactionalOperator::transactional)
                 .onErrorResume(CreateUserUseCase.BusinessException.class, e -> {
                     log.warn("Conflicto al crear usuario con email {}: {}", userDTO.getEmail(), e.getMessage());
+                    // Devolvemos 409 Conflict, que es más específico para recursos duplicados
                     return Mono.just(ResponseEntity.status(HttpStatus.CONFLICT).build());
+                })
+                .onErrorResume(Exception.class, e -> {
+                    log.error("Error inesperado al crear usuario: {} - {}", e.getClass().getName(), e.getMessage());
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
                 });
     }
 
-    // Método privado para convertir el DTO al modelo de dominio
+    // Metodo privado para convertir el DTO al modelo de dominio
     private User toModel(UserDTO userDTO) {
         return User.builder()
+                .id(userDTO.getId())
                 .firstName(userDTO.getFirstName())
                 .lastName(userDTO.getLastName())
-                .email(userDTO.getEmail())
-                .password(userDTO.getPassword())
-                .role(User.Role.valueOf(userDTO.getRole()))
                 .birthDate(userDTO.getBirthDate())
+                .password(userDTO.getPassword())
                 .address(userDTO.getAddress())
                 .phoneNumber(userDTO.getPhoneNumber())
+                .email(userDTO.getEmail())
                 .baseSalary(userDTO.getBaseSalary())
+                .role(userDTO.getRole() == null ? User.Role.APPLICANT : userDTO.getRole())
+                .build();
+    }
+
+    private UserDTO toDTO(User user) {
+        return UserDTO.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .birthDate(user.getBirthDate())
+                .address(user.getAddress())
+                .phoneNumber(user.getPhoneNumber())
+                .baseSalary(user.getBaseSalary())
+                // La contraseña se deja en null por seguridad
                 .build();
     }
 }

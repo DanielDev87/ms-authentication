@@ -1,6 +1,7 @@
 server:
   port: 8080
-
+springdoc:
+  packages-to-scan: co.com.bancolombia.api
 spring:
   application:
     name: "MsAuth"

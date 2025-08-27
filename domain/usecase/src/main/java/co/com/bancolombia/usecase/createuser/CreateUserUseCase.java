@@ -17,12 +17,10 @@ public class CreateUserUseCase {
         logger.info("Iniciando creación para usuario con email: {}", user.getEmail());
 
         return userRepository.findByEmail(user.getEmail())
-                // Si el Mono emite un usuario, significa que el email ya existe.
                 .flatMap(existingUser -> {
                     logger.warn("El email {} ya está registrado.", user.getEmail());
                     return Mono.error(new BusinessException("El correo electrónico ya está en uso."));
                 })
-                // Si el Mono está vacío (switchIfEmpty), el email no existe y procedemos.
                 .switchIfEmpty(Mono.defer(() -> {
                     logger.info("Email disponible. Encriptando contraseña para el usuario: {}", user.getEmail());
                     return passwordEncryptionGateway.encode(user.getPassword())
@@ -32,7 +30,6 @@ public class CreateUserUseCase {
                                 return userRepository.save(user);
                             });
                 }))
-                // Limpiamos la contraseña antes de devolver el objeto por seguridad.
                 .ofType(User.class)
                 .map(savedUser -> {
                     logger.info("Usuario {} guardado exitosamente.", savedUser.getEmail());
