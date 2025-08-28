@@ -38,7 +38,6 @@ class CreateUserUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        // Creamos un usuario de prueba con todos los campos requeridos por la HU1
         userToCreate = User.builder()
                 .documentNumber("123456")
                 .firstName("Daniel")
@@ -54,7 +53,7 @@ class CreateUserUseCaseTest {
     }
 
     @Test
-    void shouldCreateUserSuccessfullyWhenEmailDoesNotExist() {
+    void shouldCreateUserSuccessfully() {
         // Arrange
         String hashedPassword = "a-very-secure-hashed-password";
         User userWithHashedPassword = userToCreate.toBuilder().password(hashedPassword).build();
@@ -62,9 +61,11 @@ class CreateUserUseCaseTest {
 
         // 1. Simula que el email NO existe
         when(userRepository.findByEmail(userToCreate.getEmail())).thenReturn(Mono.empty());
-        // 2. Simula la encriptación
+        // 2. AÑADIDO: Simula que el número de documento TAMPOCO existe
+        when(userRepository.findByDocumentNumber(userToCreate.getDocumentNumber())).thenReturn(Mono.empty());
+        // 3. Simula la encriptación
         when(passwordEncryptionGateway.encode(userToCreate.getPassword())).thenReturn(Mono.just(hashedPassword));
-        // 3. Simula el guardado
+        // 4. Simula el guardado
         when(userRepository.save(any(User.class))).thenReturn(Mono.just(savedUser));
 
         // Act
@@ -76,6 +77,7 @@ class CreateUserUseCaseTest {
                 .verifyComplete();
 
         verify(userRepository).findByEmail("new@test.com");
+        verify(userRepository).findByDocumentNumber("123456"); // AÑADIDO: Verifica la nueva llamada
         verify(passwordEncryptionGateway).encode("plainPassword123");
         verify(userRepository).save(any(User.class));
     }
@@ -97,6 +99,32 @@ class CreateUserUseCaseTest {
                 .verify();
 
         verify(userRepository).findByEmail("new@test.com");
+        // Verifica que las otras operaciones NUNCA fueron llamadas
+        verify(userRepository, never()).findByDocumentNumber(any());
+        verify(passwordEncryptionGateway, never()).encode(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldFailWhenDocumentNumberAlreadyExists() {
+        // Arrange
+        User existingUser = User.builder().id(3L).documentNumber("123456").build();
+
+        // 1. Simula que el email NO existe
+        when(userRepository.findByEmail(userToCreate.getEmail())).thenReturn(Mono.empty());
+        // 2. Simula que el número de documento SÍ existe
+        when(userRepository.findByDocumentNumber(userToCreate.getDocumentNumber())).thenReturn(Mono.just(existingUser));
+
+        // Act
+        Mono<User> result = createUserUseCase.execute(userToCreate);
+
+        // Assert
+        StepVerifier.create(result)
+                .expectError(CreateUserUseCase.BusinessException.class)
+                .verify();
+
+        verify(userRepository).findByEmail("new@test.com");
+        verify(userRepository).findByDocumentNumber("123456");
         // Verifica que la encriptación y el guardado NUNCA fueron llamados
         verify(passwordEncryptionGateway, never()).encode(any());
         verify(userRepository, never()).save(any());
