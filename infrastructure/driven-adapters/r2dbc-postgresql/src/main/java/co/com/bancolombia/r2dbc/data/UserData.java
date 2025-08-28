@@ -14,16 +14,17 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("users") // Nombre exacto de la tabla en la base de datos
+@Table("users")
 public class UserData {
 
     @Id
     private Long id;
+    private String documentNumber;
     private String firstName;
     private String lastName;
     private String email;
     private String password;
-    private String role; // Guardaremos el rol como un String (ej. "APPLICANT" o "ADMIN")
+    private String role;
     private LocalDate birthDate;
     private String address;
     private String phoneNumber;

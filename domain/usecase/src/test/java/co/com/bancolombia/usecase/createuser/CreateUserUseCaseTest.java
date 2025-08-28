@@ -40,6 +40,7 @@ class CreateUserUseCaseTest {
     void setUp() {
         // Creamos un usuario de prueba con todos los campos requeridos por la HU1
         userToCreate = User.builder()
+                .documentNumber("123456")
                 .firstName("Daniel")
                 .lastName("Agudelo")
                 .email("new@test.com")

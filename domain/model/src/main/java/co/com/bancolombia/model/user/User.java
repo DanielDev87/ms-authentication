@@ -11,6 +11,7 @@ import java.time.LocalDate;
 @EqualsAndHashCode
 public class User {
     private Long id;
+    private String documentNumber;
     private String firstName;
     private String lastName;
     private LocalDate birthDate;

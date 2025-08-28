@@ -106,6 +106,7 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs = [
             '-Amapstruct.suppressGeneratorTimestamp=true'
     ]
+    options.compilerArgs.add('-parameters')
 }
 
 pitestReportAggregate {

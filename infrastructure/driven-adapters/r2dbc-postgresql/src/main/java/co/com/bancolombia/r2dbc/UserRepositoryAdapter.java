@@ -4,15 +4,16 @@ import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.model.user.gateways.UserRepository;
 import co.com.bancolombia.r2dbc.data.UserData;
 import lombok.RequiredArgsConstructor;
+import org.reactivecommons.utils.ObjectMapper;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 
 @RequiredArgsConstructor
-// La implementación debe ser simple, sin parámetros genéricos
 public class UserRepositoryAdapter implements UserRepository {
 
     private final UserDataRepository repository;
+    private final ObjectMapper mapper;
 
     @Override
     public Mono<User> save(User user) {
@@ -20,7 +21,6 @@ public class UserRepositoryAdapter implements UserRepository {
                 .map(this::toDomain);
     }
 
-    // ... (El resto de la clase se mantiene igual)
 
     @Override
     public Mono<User> findById(Long id) {
@@ -31,6 +31,12 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public Mono<User> findByEmail(String email) {
         return repository.findByEmail(email)
+                .map(this::toDomain);
+    }
+
+    @Override
+    public Mono<User> findByDocumentNumber(String documentNumber) {
+        return repository.findByDocumentNumber(documentNumber)
                 .map(this::toDomain);
     }
 
@@ -48,6 +54,7 @@ public class UserRepositoryAdapter implements UserRepository {
     private User toDomain(UserData userData) {
         return User.builder()
                 .id(userData.getId())
+                .documentNumber(userData.getDocumentNumber())
                 .firstName(userData.getFirstName())
                 .lastName(userData.getLastName())
                 .email(userData.getEmail())
@@ -63,6 +70,7 @@ public class UserRepositoryAdapter implements UserRepository {
     private UserData toData(User user) {
         return UserData.builder()
                 .id(user.getId())
+                .documentNumber(user.getDocumentNumber())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())

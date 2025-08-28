@@ -3,6 +3,7 @@ package co.com.bancolombia.api;
 import co.com.bancolombia.api.dto.UserDTO;
 import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.usecase.createuser.CreateUserUseCase;
+import co.com.bancolombia.usecase.findbydocumentnumber.FindByDocumentNumberUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,11 +21,15 @@ import reactor.core.publisher.Mono;
 public class ApiRest {
 
     private final CreateUserUseCase createUserUseCase;
+    private final FindByDocumentNumberUseCase  findByDocumentNumberUseCase;
     private final TransactionalOperator transactionalOperator;
 
-    @GetMapping("/hello")
-    public Mono<String> sayHello() {
-        return Mono.just("Hello, World!");
+    @GetMapping("/document/{documentNumber}")
+    public Mono<ResponseEntity<UserDTO>> getUserByDocumentNumber(@PathVariable("documentNumber") String documentNumber) {
+        log.info("Buscando usuario con documento: {}", documentNumber);
+        return findByDocumentNumberUseCase.execute(documentNumber)
+                .map(user -> ResponseEntity.ok(toDTO(user)))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -55,6 +60,7 @@ public class ApiRest {
     private User toModel(UserDTO userDTO) {
         return User.builder()
                 .id(userDTO.getId())
+                .documentNumber(userDTO.getDocumentNumber())
                 .firstName(userDTO.getFirstName())
                 .lastName(userDTO.getLastName())
                 .birthDate(userDTO.getBirthDate())
@@ -70,6 +76,7 @@ public class ApiRest {
     private UserDTO toDTO(User user) {
         return UserDTO.builder()
                 .id(user.getId())
+                .documentNumber(user.getDocumentNumber())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())

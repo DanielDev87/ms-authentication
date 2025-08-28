@@ -22,13 +22,23 @@ public class CreateUserUseCase {
                     return Mono.error(new BusinessException("El correo electrónico ya está en uso."));
                 })
                 .switchIfEmpty(Mono.defer(() -> {
-                    logger.info("Email disponible. Encriptando contraseña para el usuario: {}", user.getEmail());
-                    return passwordEncryptionGateway.encode(user.getPassword())
-                            .flatMap(hashedPassword -> {
-                                user.setPassword(hashedPassword);
-                                logger.info("Contraseña encriptada. Guardando usuario: {}", user.getEmail());
-                                return userRepository.save(user);
-                            });
+                    // Email disponible, ahora verificamos el número de documento
+                    logger.info("Email {} disponible. Verificando número de documento...", user.getEmail());
+                    return userRepository.findByDocumentNumber(user.getDocumentNumber())
+                            .flatMap(existingUserByDoc -> {
+                                logger.warn("El número de documento {} ya está registrado.", user.getDocumentNumber());
+                                return Mono.error(new BusinessException("El número de documento ya está en uso."));
+                            })
+                            // Si el documento también está disponible, procedemos a crear el usuario
+                            .switchIfEmpty(Mono.defer(() -> {
+                                logger.info("Documento disponible. Encriptando contraseña para el usuario: {}", user.getEmail());
+                                return passwordEncryptionGateway.encode(user.getPassword())
+                                        .flatMap(hashedPassword -> {
+                                            user.setPassword(hashedPassword);
+                                            logger.info("Contraseña encriptada. Guardando usuario: {}", user.getEmail());
+                                            return userRepository.save(user);
+                                        });
+                            }));
                 }))
                 .ofType(User.class)
                 .map(savedUser -> {

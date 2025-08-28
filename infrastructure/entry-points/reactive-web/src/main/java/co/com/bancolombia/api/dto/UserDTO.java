@@ -17,6 +17,9 @@ import java.time.LocalDate;
 public class UserDTO {
     private Long id;
 
+    @NotBlank(message = "El número de documento no puede estar vacío")
+    private String documentNumber;
+
     @NotBlank(message = "El nombre no puede estar vacío")
     private String firstName;
 

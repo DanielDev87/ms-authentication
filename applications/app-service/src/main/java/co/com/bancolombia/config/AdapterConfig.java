@@ -18,7 +18,7 @@ public class AdapterConfig {
 
     @Bean
     public UserRepository userRepository(UserDataRepository repository, ObjectMapper mapper) {
-        return new UserRepositoryAdapter(repository);
+        return new UserRepositoryAdapter(repository, mapper);
     }
 
 }
