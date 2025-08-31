@@ -1,11 +1,14 @@
 package co.com.bancolombia.usecase.createuser;
-
 import co.com.bancolombia.model.log.gateways.LoggerService;
 import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.model.user.gateways.PasswordEncryptionGateway;
 import co.com.bancolombia.model.user.gateways.UserRepository;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+import co.com.bancolombia.model.user.gateways.PasswordEncryptionGateway.*;
+
+import static co.com.bancolombia.model.constants.BusinessErrorMessageConstants.*;
+import static co.com.bancolombia.model.constants.LogConstants.*;
 
 @RequiredArgsConstructor
 public class CreateUserUseCase {
@@ -14,37 +17,39 @@ public class CreateUserUseCase {
     private final LoggerService logger;
 
     public Mono<User> execute(User user) {
-        logger.info("Iniciando creación para usuario con email: {}", user.getEmail());
+        logger.info(CREATE_USER_USE_CASE_STARTED, user.getEmail());
+        return validateEmailDoesNotExist(user)
+                .then(validateDocumentDoesNotExist(user))
+                .then(encryptPasswordAndSave(user))
+                .map(this::clearPasswordAndLogSuccess);
+    }
 
+    private Mono<Void> validateEmailDoesNotExist(User user) {
         return userRepository.findByEmail(user.getEmail())
                 .flatMap(existingUser -> {
-                    logger.warn("El email {} ya está registrado.", user.getEmail());
-                    return Mono.error(new BusinessException("El correo electrónico ya está en uso."));
-                })
-                .switchIfEmpty(Mono.defer(() -> {
-                    // Email disponible, ahora verificamos el número de documento
-                    logger.info("Email {} disponible. Verificando número de documento...", user.getEmail());
-                    return userRepository.findByDocumentNumber(user.getDocumentNumber())
-                            .flatMap(existingUserByDoc -> {
-                                logger.warn("El número de documento {} ya está registrado.", user.getDocumentNumber());
-                                return Mono.error(new BusinessException("El número de documento ya está en uso."));
-                            })
-                            // Si el documento también está disponible, procedemos a crear el usuario
-                            .switchIfEmpty(Mono.defer(() -> {
-                                logger.info("Documento disponible. Encriptando contraseña para el usuario: {}", user.getEmail());
-                                return passwordEncryptionGateway.encode(user.getPassword())
-                                        .flatMap(hashedPassword -> {
-                                            user.setPassword(hashedPassword);
-                                            logger.info("Contraseña encriptada. Guardando usuario: {}", user.getEmail());
-                                            return userRepository.save(user);
-                                        });
-                            }));
-                }))
-                .ofType(User.class)
-                .map(savedUser -> {
-                    logger.info("Usuario {} guardado exitosamente.", savedUser.getEmail());
-                    return savedUser.toBuilder().password(null).build();
-                });
+                    logger.warn(EMAIL_ALREADY_EXISTS_WARN, user.getEmail());
+                    return Mono.error(new BusinessException(EMAIL_ALREADY_IN_USE));
+                }).then();
+    }
+
+    private Mono<Void> validateDocumentDoesNotExist(User user) {
+        return userRepository.findByDocumentNumber(user.getDocumentNumber())
+                .flatMap(existingUser -> {
+                    logger.warn(DOCUMENT_ALREADY_EXISTS_WARN, user.getDocumentNumber());
+                    return Mono.error(new BusinessException(DOCUMENT_NUMBER_ALREADY_IN_USE));
+                }).then();
+    }
+
+    private Mono<User> encryptPasswordAndSave(User user) {
+        logger.info(ENCRYPTING_PASSWORD, user.getEmail());
+        return passwordEncryptionGateway.encode(user.getPassword())
+                .map(hashedPassword -> user.toBuilder().password(hashedPassword).build())
+                .flatMap(userRepository::save);
+    }
+
+    private User clearPasswordAndLogSuccess(User savedUser) {
+        logger.info(USER_CREATED_SUCCESSFULLY, savedUser.getEmail());
+        return savedUser.toBuilder().password(null).build();
     }
 
     public static class BusinessException extends RuntimeException {

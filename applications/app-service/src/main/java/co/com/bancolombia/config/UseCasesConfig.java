@@ -1,5 +1,6 @@
 package co.com.bancolombia.config;
 
+import co.com.bancolombia.api.handler.UserTransactionalUseCase;
 import co.com.bancolombia.model.log.gateways.LoggerService;
 import co.com.bancolombia.model.user.gateways.PasswordEncryptionGateway;
 import co.com.bancolombia.model.user.gateways.UserRepository;
@@ -7,6 +8,7 @@ import co.com.bancolombia.usecase.createuser.CreateUserUseCase;
 import co.com.bancolombia.usecase.findbydocumentnumber.FindByDocumentNumberUseCase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.reactive.TransactionalOperator;
 
 @Configuration
 public class UseCasesConfig {
@@ -19,5 +21,13 @@ public class UseCasesConfig {
     @Bean
     public FindByDocumentNumberUseCase findByDocumentNumberUseCase(UserRepository userRepository) {
         return new FindByDocumentNumberUseCase(userRepository);
+    }
+
+    @Bean
+    public UserTransactionalUseCase userTransactionalUseCase(
+            CreateUserUseCase createUserUseCase,
+            TransactionalOperator transactionalOperator
+    ) {
+        return new UserTransactionalUseCase(createUserUseCase, transactionalOperator);
     }
 }

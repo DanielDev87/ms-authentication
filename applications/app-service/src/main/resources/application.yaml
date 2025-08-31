@@ -1,12 +1,22 @@
 server:
   port: 8080
-springdoc:
-  packages-to-scan: co.com.bancolombia.api
+
 spring:
   application:
-    name: "MsAuth"
+    name: "ms-authentication"
   main:
     web-application-type: reactive
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  info:
+    title: "Microservicio de Autenticación"
+    description: "API REST para la gestión de usuarios, incluyendo registro y consulta."
+    version: "1.0.0"
+
 adapters:
   r2dbc:
     host: localhost
@@ -15,6 +25,7 @@ adapters:
     schema: public
     username: dbeaver
     password: 12345
+
 management:
   endpoints:
     web:

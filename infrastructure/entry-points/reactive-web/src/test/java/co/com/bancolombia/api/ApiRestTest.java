@@ -1,8 +1,11 @@
 package co.com.bancolombia.api;
 
 import co.com.bancolombia.api.dto.UserDTO;
+import co.com.bancolombia.api.handler.Handler;
+import co.com.bancolombia.api.handler.UserTransactionalUseCase;
 import co.com.bancolombia.model.user.User;
-import co.com.bancolombia.usecase.createuser.CreateUserUseCase;
+
+import co.com.bancolombia.usecase.findbydocumentnumber.FindByDocumentNumberUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
@@ -10,62 +13,74 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.transaction.reactive.TransactionalOperator; // <-- Importar
 import reactor.core.publisher.Mono;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-@WebFluxTest(controllers = ApiRest.class)
-@Import(TestApplication.class)
+
+@WebFluxTest
+@Import({ApiRest.class, Handler.class})
 class ApiRestTest {
 
     @Autowired
     private WebTestClient webTestClient;
 
     @MockBean
-    private CreateUserUseCase createUserUseCase;
-
+    private UserTransactionalUseCase userTransactionalUseCase; // Mock del wrapper transaccional
     @MockBean
-    private TransactionalOperator transactionalOperator;
+    private FindByDocumentNumberUseCase findByDocumentNumberUseCase;
 
     @Test
-    void registerUserShouldReturnCreated() {
+    void createUserShouldReturnCreated() {
         // Arrange
         UserDTO userToRegister = new UserDTO();
-        userToRegister.setFirstName("Test");
-        userToRegister.setLastName("User");
-        userToRegister.setEmail("test.user@example.com");
-        userToRegister.setPassword("pass");
-        userToRegister.setRole(User.Role.APPLICANT);
-        userToRegister.setBaseSalary(new BigDecimal("1000"));
-        userToRegister.setBirthDate(LocalDate.now());
+        userToRegister.setEmail("test@example.com");
 
-        User userSavedInDB = User.builder()
-                .id(1L)
-                .email("test.user@example.com")
-                .firstName("Test")
-                .build();
+        User savedUser = User.builder().id(1L).build();
 
-        when(createUserUseCase.execute(any(User.class))).thenReturn(Mono.just(userSavedInDB));
-        // Simula el comportamiento del TransactionalOperator
-        when(transactionalOperator.transactional(any(Mono.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        // Simula el comportamiento del wrapper transaccional
+        when(userTransactionalUseCase.createUser(any(User.class))).thenReturn(Mono.just(savedUser));
 
         // Act & Assert
-        webTestClient.post().uri("/api/v1/users")
+        webTestClient.post()
+                .uri("/api/v1/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(userToRegister)
                 .exchange()
                 .expectStatus().isCreated()
-                // 2. CORRIGE LA ASERCIÓN: Espera un DTO y valida sus campos
+                .expectBody().isEmpty();
+    }
+
+    @Test
+    void getUserByDocumentNumberShouldReturnUser() {
+        // Arrange
+        String documentNumber = "12345";
+        User foundUser = User.builder()
+                .id(1L)
+                .documentNumber(documentNumber)
+                .firstName("Test")
+                .lastName("User")
+                .email("test@example.com")
+                .role(User.Role.APPLICANT)
+                .build();
+
+        // Simula el comportamiento del caso de uso de búsqueda
+        when(findByDocumentNumberUseCase.execute(anyString())).thenReturn(Mono.just(foundUser));
+
+        // Act & Assert
+        webTestClient.get()
+                .uri("/api/v1/users/document/{doc}", documentNumber)
+                .exchange()
+                .expectStatus().isOk() // Verifica que el estado sea 200 OK
                 .expectBody(UserDTO.class)
                 .value(userResponse -> {
+                    // Valida que los datos en el DTO de respuesta sean los correctos
                     assert userResponse.getId().equals(1L);
-                    assert userResponse.getEmail().equals("test.user@example.com");
-                    assert userResponse.getPassword() == null;
+                    assert userResponse.getDocumentNumber().equals(documentNumber);
+                    assert userResponse.getEmail().equals("test@example.com");
                 });
     }
 }
