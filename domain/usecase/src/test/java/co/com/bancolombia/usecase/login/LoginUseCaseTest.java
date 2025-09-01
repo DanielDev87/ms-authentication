@@ -12,6 +12,11 @@ import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.LocalDateTime;
+
+import static co.com.bancolombia.usecase.login.LoginUseCaseConstants.ERROR_ACCOUNT_LOCKED;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class LoginUseCaseTest {
@@ -35,27 +40,50 @@ class LoginUseCaseTest {
                 .email("test@domain.com")
                 .password("hashedPassword")
                 .role(User.Role.ADMIN)
+                .failedLoginAttempts(0)
+                .accountLockedUntil(null)
                 .build();
     }
 
     @Test
-    void shouldLoginSuccessfullyAndReturnToken() {
+    void shouldLoginSuccessfullyAndResetAttempts() {
         // Arrange
+        sampleUser.setFailedLoginAttempts(2); // Simulamos que tenía intentos fallidos previos
         when(userRepository.findByEmail("test@domain.com")).thenReturn(Mono.just(sampleUser));
         when(passwordEncoder.matches("plainPassword", "hashedPassword")).thenReturn(true);
-        when(jwtProvider.generateToken(sampleUser)).thenReturn("dummy.jwt.token");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+        when(jwtProvider.generateToken(any(User.class))).thenReturn("dummy.jwt.token");
 
         // Act & Assert
         StepVerifier.create(loginUseCase.execute("test@domain.com", "plainPassword"))
                 .expectNext("dummy.jwt.token")
                 .verifyComplete();
+
+        verify(userRepository).save(any(User.class)); // Verificamos que se guardó el usuario
     }
 
     @Test
-    void shouldReturnErrorWhenPasswordIsIncorrect() {
+    void shouldFailLoginAndIncrementAttempts() {
         // Arrange
         when(userRepository.findByEmail("test@domain.com")).thenReturn(Mono.just(sampleUser));
         when(passwordEncoder.matches("wrongPassword", "hashedPassword")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(Mono.just(sampleUser));
+
+        // Act & Assert
+        StepVerifier.create(loginUseCase.execute("test@domain.com", "wrongPassword"))
+                .expectError(LoginUseCase.BusinessException.class)
+                .verify();
+
+        verify(userRepository).save(any(User.class)); // Verificamos que se guardó para incrementar el contador
+    }
+
+    @Test
+    void shouldLockAccountAfterMaxFailedAttempts() {
+        // Arrange
+        sampleUser.setFailedLoginAttempts(2); // Estaba a un intento de ser bloqueado
+        when(userRepository.findByEmail("test@domain.com")).thenReturn(Mono.just(sampleUser));
+        when(passwordEncoder.matches("wrongPassword", "hashedPassword")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
         // Act & Assert
         StepVerifier.create(loginUseCase.execute("test@domain.com", "wrongPassword"))
@@ -63,14 +91,16 @@ class LoginUseCaseTest {
                 .verify();
     }
 
+
     @Test
-    void shouldReturnErrorWhenUserNotFound() {
+    void shouldFailLoginIfAccountIsAlreadyLocked() {
         // Arrange
-        when(userRepository.findByEmail("notfound@domain.com")).thenReturn(Mono.empty());
+        sampleUser.setAccountLockedUntil(LocalDateTime.now().plusMinutes(15));
+        when(userRepository.findByEmail("test@domain.com")).thenReturn(Mono.just(sampleUser));
 
         // Act & Assert
-        StepVerifier.create(loginUseCase.execute("notfound@domain.com", "anyPassword"))
-                .expectError(LoginUseCase.BusinessException.class)
+        StepVerifier.create(loginUseCase.execute("test@domain.com", "anyPassword"))
+                .expectErrorMessage(ERROR_ACCOUNT_LOCKED)
                 .verify();
     }
 }

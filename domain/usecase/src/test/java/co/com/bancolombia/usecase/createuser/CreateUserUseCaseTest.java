@@ -40,6 +40,8 @@ class CreateUserUseCaseTest {
                 .email("new@test.com")
                 .password("plainPassword123")
                 .role(User.Role.APPLICANT)
+                .failedLoginAttempts(0)
+                .accountLockedUntil(null)
                 .build();
     }
 
