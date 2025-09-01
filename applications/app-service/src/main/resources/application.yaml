@@ -26,6 +26,11 @@ adapters:
     username: dbeaver
     password: 12345
 
+security:
+  jwt:
+    secret: "${JWT_SECRET:EstaEsUnaClaveSecretaPorDefectoNoSeguraParaDesarrollo}"
+    expiration: 3600
+
 management:
   endpoints:
     web:
