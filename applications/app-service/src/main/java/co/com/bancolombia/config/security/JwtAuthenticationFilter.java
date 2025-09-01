@@ -24,7 +24,6 @@ public class JwtAuthenticationFilter implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, @NonNull WebFilterChain chain) {
         String token = resolveToken(exchange);
         if (token != null && jwtAdapter.validateToken(token)) {
-            // 2. CAMBIAR EL TIPO DE LA VARIABLE A LA INTERFAZ
             Authentication auth = jwtAdapter.getAuthentication(token);
             return chain.filter(exchange)
                     .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));

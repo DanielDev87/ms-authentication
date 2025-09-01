@@ -1,9 +1,12 @@
 package co.com.bancolombia.api.handler;
 
+import co.com.bancolombia.api.dto.LoginDTO;
+import co.com.bancolombia.api.dto.TokenDTO;
 import co.com.bancolombia.api.dto.UserDTO;
 import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.usecase.createuser.CreateUserUseCase;
 import co.com.bancolombia.usecase.findbydocumentnumber.FindByDocumentNumberUseCase;
+import co.com.bancolombia.usecase.login.LoginUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,6 +27,7 @@ import static co.com.bancolombia.model.constants.LogConstants.*;
 public class Handler {
     private final UserTransactionalUseCase userTransactionalUseCase;
     private final FindByDocumentNumberUseCase findByDocumentNumberUseCase;
+    private final LoginUseCase loginUseCase;
 
     public Mono<ServerResponse> getUserByDocumentNumber(ServerRequest serverRequest) {
         String documentNumber = serverRequest.pathVariable("documentNumber");
@@ -51,6 +55,14 @@ public class Handler {
                                 return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
                             });
                 });
+    }
+
+    public Mono<ServerResponse> login(ServerRequest serverRequest) {
+        return serverRequest.bodyToMono(LoginDTO.class)
+                .flatMap(dto -> loginUseCase.execute(dto.getEmail(), dto.getPassword()))
+                .flatMap(token -> ServerResponse.ok().bodyValue(new TokenDTO(token)))
+                .onErrorResume(LoginUseCase.BusinessException.class, e ->
+                        ServerResponse.status(HttpStatus.UNAUTHORIZED).build());
     }
 
     private User toModel(UserDTO userDTO) {

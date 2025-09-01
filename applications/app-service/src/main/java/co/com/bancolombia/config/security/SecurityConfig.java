@@ -22,14 +22,9 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchange -> exchange
-                        // 2. Definimos los endpoints que son PÚBLICOS
                         .pathMatchers("/api/v1/login").permitAll()
                         .pathMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**", "/webjars/**").permitAll()
-
-                        // 3. Definimos los endpoints que son PRIVADOS y sus roles requeridos
                         .pathMatchers(HttpMethod.POST, "/api/v1/users").hasAnyAuthority("ROLE_ADMIN", "ROLE_ADVISER")
-
-                        // 4. Cualquier otra petición debe estar autenticada
                         .anyExchange().authenticated()
                 )
                 .addFilterAt(authenticationWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)

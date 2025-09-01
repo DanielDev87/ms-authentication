@@ -6,6 +6,9 @@ import co.com.bancolombia.model.user.gateways.PasswordEncryptionGateway;
 import co.com.bancolombia.model.user.gateways.UserRepository;
 import co.com.bancolombia.usecase.createuser.CreateUserUseCase;
 import co.com.bancolombia.usecase.findbydocumentnumber.FindByDocumentNumberUseCase;
+import co.com.bancolombia.usecase.login.LoginUseCase;
+import co.com.bancolombia.usecase.security.gateways.JwtProvider;
+import co.com.bancolombia.usecase.security.gateways.PasswordEncoder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.reactive.TransactionalOperator;
@@ -21,6 +24,11 @@ public class UseCasesConfig {
     @Bean
     public FindByDocumentNumberUseCase findByDocumentNumberUseCase(UserRepository userRepository) {
         return new FindByDocumentNumberUseCase(userRepository);
+    }
+
+    @Bean
+    public LoginUseCase loginUseCase(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
+        return new LoginUseCase(userRepository, passwordEncoder, jwtProvider);
     }
 
     @Bean

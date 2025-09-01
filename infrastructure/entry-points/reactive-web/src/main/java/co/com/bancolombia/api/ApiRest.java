@@ -19,7 +19,8 @@ public class ApiRest implements UserApiDocumentation {
     @Bean
     @Override
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
-        return route(POST("/api/v1/users"), handler::createUser)
+        return route(POST("/api/v1/login"), handler::login)
+                .andRoute(POST("/api/v1/users"), handler::createUser)
                 .andRoute(GET("/api/v1/users/document/{documentNumber}"), handler::getUserByDocumentNumber);
     }
 }

@@ -49,7 +49,6 @@ public class JwtAdapter implements JwtProvider {
                     .parseClaimsJws(token);
             return !claims.getBody().getExpiration().before(new Date());
         } catch (JwtException | IllegalArgumentException e) {
-            // Puedes agregar un log aquí para depuración
             return false;
         }
     }
