@@ -20,28 +20,25 @@ import static org.mockito.Mockito.when;
 
 class HandlerTest {
 
-    // Mockeamos las dependencias que el Handler necesita
     @Mock
     private CreateUserUseCase createUserUseCase;
     @Mock
     private LoginUseCase loginUseCase;
     @Mock
-    private ServerRequest serverRequest; // Mockeamos la petición entrante
+    private ServerRequest serverRequest;
 
-    // Inyectamos los mocks en nuestra clase Handler
     @InjectMocks
     private Handler handler;
 
     @BeforeEach
     void setUp() {
-        // Inicializamos los mocks antes de cada prueba
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
     void shouldCreateUserSuccessfully() {
         // Arrange (Organizar)
-        UserDTO userDTO = new UserDTO(); // Asigna valores si es necesario
+        UserDTO userDTO = new UserDTO();
         User userModel = User.builder().build();
 
         when(serverRequest.bodyToMono(UserDTO.class)).thenReturn(Mono.just(userDTO));

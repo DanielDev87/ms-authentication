@@ -2,27 +2,27 @@ package co.com.bancolombia.r2dbc;
 
 import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.model.user.gateways.UserRepository;
-import co.com.bancolombia.r2dbc.data.UserData;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import co.com.bancolombia.r2dbc.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
 @RequiredArgsConstructor
-public class PostgresRepositoryAdapter implements UserRepository {
+public class UserRepositoryAdapter implements UserRepository {
 
-    private final UserDataRepository repository;
-    private final ObjectMapper mapper;
+    private final UserDataRepository repository; // Repositorio de Spring Data
+    private final UserMapper mapper;             // El mapper que creamos
 
     @Override
     public Mono<User> save(User user) {
-        UserData userData = mapper.convertValue(user, UserData.class);
-        return repository.save(userData)
-                .map(this::toModel);
+        // Convierte el modelo de dominio a datos, lo guarda, y lo reconvierte a dominio
+        return Mono.just(user)
+                .map(mapper::toData)
+                .flatMap(repository::save)
+                .map(mapper::toDomain);
     }
 
     @Override
@@ -32,14 +32,14 @@ public class PostgresRepositoryAdapter implements UserRepository {
 
     @Override
     public Mono<User> findByEmail(String email) {
+        // Busca en la BD y convierte el resultado a un modelo de dominio
         return repository.findByEmail(email)
-                .map(this::toModel);
+                .map(mapper::toDomain);
     }
 
     @Override
     public Mono<User> findByDocumentNumber(String documentNumber) {
-        return repository.findByDocumentNumber(documentNumber)
-                .map(this::toModel);
+        return null;
     }
 
     @Override
@@ -50,9 +50,5 @@ public class PostgresRepositoryAdapter implements UserRepository {
     @Override
     public Mono<Void> deleteById(Long id) {
         return null;
-    }
-
-    private User toModel(UserData userData) {
-        return mapper.convertValue(userData, User.class);
     }
 }

@@ -7,17 +7,16 @@ import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.usecase.createuser.CreateUserUseCase;
 import co.com.bancolombia.usecase.findbydocumentnumber.FindByDocumentNumberUseCase;
 import co.com.bancolombia.usecase.login.LoginUseCase;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
 
 import static co.com.bancolombia.model.constants.LogConstants.*;
 
@@ -59,10 +58,22 @@ public class Handler {
 
     public Mono<ServerResponse> login(ServerRequest serverRequest) {
         return serverRequest.bodyToMono(LoginDTO.class)
-                .flatMap(dto -> loginUseCase.execute(dto.getEmail(), dto.getPassword()))
-                .flatMap(token -> ServerResponse.ok().bodyValue(new TokenDTO(token)))
-                .onErrorResume(LoginUseCase.BusinessException.class, e ->
-                        ServerResponse.status(HttpStatus.UNAUTHORIZED).build());
+                .flatMap(dto -> {
+                    log.info(LOGIN_REQUEST_RECEIVED, dto.getEmail());
+                    return loginUseCase.execute(dto.getEmail(), dto.getPassword())
+                            .flatMap(token -> {
+                                log.info(LOGIN_SUCCESSFUL, dto.getEmail());
+                                return ServerResponse.ok()
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .bodyValue(new TokenDTO(token));
+                            })
+                            .onErrorResume(LoginUseCase.BusinessException.class, e -> {
+                                log.warn(LOGIN_ATTEMPT_FAILED, dto.getEmail(), e.getMessage());
+                                return ServerResponse.status(HttpStatus.UNAUTHORIZED)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .bodyValue(Map.of("error", e.getMessage()));
+                            });
+                });
     }
 
     private User toModel(UserDTO userDTO) {

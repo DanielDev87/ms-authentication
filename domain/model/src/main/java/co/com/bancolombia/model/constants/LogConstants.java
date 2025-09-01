@@ -25,5 +25,11 @@ public final class LogConstants {
     public static final String USER_SEARCH_BY_DOCUMENT_STARTED = "Buscando usuario con documento: {}";
     public static final String USER_CREATION_REQUEST_RECEIVED = "Recibida petición para crear usuario con email: {}";
 
+    // --- Mensajes LOGIN ---
+    public static final String LOGIN_REQUEST_RECEIVED = "Solicitud de login recibida para el usuario: {}";
+    public static final String LOGIN_SUCCESSFUL = "Login exitoso para el usuario: {}";
+    public static final String LOGIN_ATTEMPT_FAILED = "Intento de login fallido para {}: {}";
+    public static final String JSON_ERROR_KEY = "error";
+
 
 }

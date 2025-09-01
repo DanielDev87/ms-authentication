@@ -9,6 +9,7 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -29,4 +30,6 @@ public class UserData {
     private String address;
     private String phoneNumber;
     private BigDecimal baseSalary;
+    private Integer failedLoginAttempts;
+    private LocalDateTime accountLockedUntil;
 }

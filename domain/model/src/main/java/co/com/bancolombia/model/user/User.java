@@ -2,6 +2,7 @@ package co.com.bancolombia.model.user;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -21,6 +22,8 @@ public class User {
     private String phoneNumber;
     private String email;
     private BigDecimal baseSalary;
+    private Integer failedLoginAttempts;
+    private LocalDateTime accountLockedUntil;
 
     public enum Role {
         APPLICANT, // Solicitante
