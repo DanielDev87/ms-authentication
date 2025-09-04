@@ -64,7 +64,7 @@ class ApiRestTest {
                 .firstName("Test")
                 .lastName("User")
                 .email("test@example.com")
-                .role(User.Role.APPLICANT)
+                .role(User.Role.CLIENT)
                 .build();
 
         // Simula el comportamiento del caso de uso de búsqueda

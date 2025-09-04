@@ -26,7 +26,8 @@ public class User {
     private LocalDateTime accountLockedUntil;
 
     public enum Role {
-        APPLICANT, // Solicitante
-        ADMIN      // Administrador
+        CLIENT,    // Reemplaza a APPLICANT
+        ADMIN,     // Admin
+        ADVISER    // Nuevo rol para crear usuarios
     }
 }

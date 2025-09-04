@@ -88,7 +88,7 @@ public class Handler {
                 .phoneNumber(userDTO.getPhoneNumber())
                 .email(userDTO.getEmail())
                 .baseSalary(userDTO.getBaseSalary())
-                .role(userDTO.getRole() == null ? User.Role.APPLICANT : userDTO.getRole())
+                .role(userDTO.getRole() == null ? User.Role.CLIENT : userDTO.getRole())
                 .build();
     }
 

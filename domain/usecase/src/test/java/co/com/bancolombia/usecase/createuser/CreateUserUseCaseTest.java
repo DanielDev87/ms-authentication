@@ -39,7 +39,7 @@ class CreateUserUseCaseTest {
                 .documentNumber("123456")
                 .email("new@test.com")
                 .password("plainPassword123")
-                .role(User.Role.APPLICANT)
+                .role(User.Role.CLIENT)
                 .failedLoginAttempts(0)
                 .accountLockedUntil(null)
                 .build();
@@ -69,8 +69,6 @@ class CreateUserUseCaseTest {
         when(userRepository.findByEmail(userToCreate.getEmail())).thenReturn(Mono.just(existingUser));
         when(userRepository.findByDocumentNumber(anyString())).thenReturn(Mono.empty());
 
-        // --- ESTA ES LA LÍNEA QUE FALTABA ---
-        // Se añade esta simulación para evitar el NullPointerException en la construcción del flujo reactivo.
         when(passwordEncryptionGateway.encode(anyString())).thenReturn(Mono.just("some-fake-hash"));
 
         // Act

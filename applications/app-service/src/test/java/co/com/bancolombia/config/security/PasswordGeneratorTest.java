@@ -8,7 +8,7 @@ public class PasswordGeneratorTest {
     @Test
     void generatePasswordHash() {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        String rawPassword = "admin123"; // La contraseña que quieres usar
+        String rawPassword = "admin123";
         String encodedPassword = passwordEncoder.encode(rawPassword);
 
         System.out.println("CONTRASEÑA EN TEXTO PLANO: " + rawPassword);

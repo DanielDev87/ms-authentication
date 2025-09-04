@@ -48,7 +48,7 @@ class LoginUseCaseTest {
     @Test
     void shouldLoginSuccessfullyAndResetAttempts() {
         // Arrange
-        sampleUser.setFailedLoginAttempts(2); // Simulamos que tenía intentos fallidos previos
+        sampleUser.setFailedLoginAttempts(2);
         when(userRepository.findByEmail("test@domain.com")).thenReturn(Mono.just(sampleUser));
         when(passwordEncoder.matches("plainPassword", "hashedPassword")).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
@@ -59,7 +59,7 @@ class LoginUseCaseTest {
                 .expectNext("dummy.jwt.token")
                 .verifyComplete();
 
-        verify(userRepository).save(any(User.class)); // Verificamos que se guardó el usuario
+        verify(userRepository).save(any(User.class));
     }
 
     @Test
@@ -74,13 +74,13 @@ class LoginUseCaseTest {
                 .expectError(LoginUseCase.BusinessException.class)
                 .verify();
 
-        verify(userRepository).save(any(User.class)); // Verificamos que se guardó para incrementar el contador
+        verify(userRepository).save(any(User.class));
     }
 
     @Test
     void shouldLockAccountAfterMaxFailedAttempts() {
         // Arrange
-        sampleUser.setFailedLoginAttempts(2); // Estaba a un intento de ser bloqueado
+        sampleUser.setFailedLoginAttempts(2);
         when(userRepository.findByEmail("test@domain.com")).thenReturn(Mono.just(sampleUser));
         when(passwordEncoder.matches("wrongPassword", "hashedPassword")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));

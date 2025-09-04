@@ -203,3 +203,70 @@ Respuesta Esperada (Status 400 Bad Request):
     "error": "Bad Request",
     "message": "El correo electrónico ya está en uso."
 }
+
+Token de Cliente
+
+Asegúrate de tener un usuario con el rol APPLICANT (o CLIENTE) en la base de datos de ms-authentication. Si no tienes uno, usa el INSERT que te di anteriormente.
+
+En Postman, haz una petición POST a http://localhost:8080/api/v1/login con las credenciales de ese cliente.
+
+Copia el token JWT que recibas. Guárdalo como "TOKEN_CLIENTE_A".
+
+Token de Administrador
+
+Haz una petición POST a http://localhost:8080/api/v1/login con las credenciales del usuario admin@domain.com.
+
+Copia este token JWT y guárdalo como "TOKEN_ADMIN".
+
+2. Prueba los Escenarios en ms-requests
+Ahora, cambia al microservicio ms-requests (que debe estar corriendo, usualmente en el puerto 8081).
+
+✅ Caso 1: Creación Exitosa (Cliente A para sí mismo)
+
+Método: POST
+
+URL: http://localhost:8081/api/v1/requests
+
+Authorization: Selecciona Bearer Token y pega el TOKEN_CLIENTE_A.
+
+Body (JSON): Asegúrate de que el documentNumber coincida con el del cliente A.
+
+JSON
+{
+  "documentNumber": "112233",
+  "amount": 5000000,
+  "loanTypeId": 1
+}
+Resultado Esperado: Un 201 Created o un 200 OK. La solicitud se crea exitosamente porque el rol es correcto y el documento del token coincide con el del body.
+
+❌ Caso 2: Fallo por Rol (Admin intenta crear)
+
+Método y URL: Los mismos que en el caso 1.
+
+Authorization: Selecciona Bearer Token y pega el TOKEN_ADMIN.
+
+Body (JSON): El mismo que en el caso 1.
+
+Resultado Esperado: Un 403 Forbidden. Spring Security bloqueará la petición porque el token no tiene el rol CLIENTE.
+
+❌ Caso 3: Fallo por Propiedad (Cliente A para Cliente B)
+
+Método y URL: Los mismos.
+
+Authorization: Selecciona Bearer Token y pega el TOKEN_CLIENTE_A.
+
+Body (JSON): Usa un documentNumber que no corresponda al del Cliente A.
+
+JSON
+{
+  "documentNumber": "999999", // Un documento diferente
+  "amount": 2000000,
+  "loanTypeId": 2
+}
+Resultado Esperado: Un 4xx (probablemente 400 Bad Request o 401 Unauthorized, dependiendo de cómo mapees la BusinessException) con el cuerpo del error:
+
+JSON
+{
+    "error": "No tiene permisos para crear una solicitud para otro cliente."
+}
+Esto confirma que la validación dentro de tu UseCase está funcionando correctamente.
