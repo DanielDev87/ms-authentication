@@ -2,7 +2,6 @@ package co.com.bancolombia.r2dbc;
 
 import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.model.user.gateways.UserRepository;
-
 import co.com.bancolombia.r2dbc.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -13,12 +12,11 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class UserRepositoryAdapter implements UserRepository {
 
-    private final UserDataRepository repository; // Repositorio de Spring Data
-    private final UserMapper mapper;             // El mapper que creamos
+    private final UserDataRepository repository;
+    private final UserMapper mapper;
 
     @Override
     public Mono<User> save(User user) {
-        // Convierte el modelo de dominio a datos, lo guarda, y lo reconvierte a dominio
         return Mono.just(user)
                 .map(mapper::toData)
                 .flatMap(repository::save)
@@ -27,28 +25,35 @@ public class UserRepositoryAdapter implements UserRepository {
 
     @Override
     public Mono<User> findById(Long id) {
-        return null;
+        return repository.findById(id)
+                .map(mapper::toDomain);
     }
 
     @Override
     public Mono<User> findByEmail(String email) {
-        // Busca en la BD y convierte el resultado a un modelo de dominio
         return repository.findByEmail(email)
                 .map(mapper::toDomain);
     }
 
     @Override
     public Mono<User> findByDocumentNumber(String documentNumber) {
-        return null;
+        return repository.findByDocumentNumber(documentNumber)
+                .map(mapper::toDomain);
+    }
+
+    @Override
+    public Mono<User> updateUser(User user) {
+        return this.save(user);
     }
 
     @Override
     public Flux<User> findAll() {
-        return null;
+        return repository.findAll()
+                .map(mapper::toDomain);
     }
 
     @Override
     public Mono<Void> deleteById(Long id) {
-        return null;
+        return repository.deleteById(id);
     }
 }

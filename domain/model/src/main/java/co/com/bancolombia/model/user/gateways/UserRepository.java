@@ -15,6 +15,8 @@ public interface UserRepository {
 
     Mono<User> findByDocumentNumber(String documentNumber);
 
+    Mono<User> updateUser(User user);
+
     Flux<User> findAll();
 
     Mono<Void> deleteById(Long id);
