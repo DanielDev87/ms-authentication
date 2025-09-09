@@ -19,7 +19,7 @@ springdoc:
 
 adapters:
   r2dbc:
-    host: localhost
+    host: db-auth #localhost #db-auth
     port: 5432
     database: db_auth_ms
     schema: public
@@ -28,7 +28,7 @@ adapters:
 
 security:
   jwt:
-    secret: "${JWT_SECRET:EstaEsUnaClaveSecretaPorDefectoNoSeguraParaDesarrollo}"
+    secret: "${JWT_SECRET:EstaEsUnaClaveSecretaDeEjemploParaElRetoPragmaConMasDe256BitsDeLongitud}"
     expiration: 3600
 
 management:

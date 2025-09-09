@@ -1,13 +1,13 @@
 apply plugin: 'org.springframework.boot'
 
 dependencies {
-	implementation project(':security-provider')
-	implementation project(':reactive-web')
-	testImplementation 'org.springframework:spring-web'
-	//implementation 'org.reactivecommons.utils:object-mapper:0.1.0'
-	implementation project(':r2dbc-postgresql')
-    implementation project(':model')
-    implementation project(':usecase')
+    implementation project(':infrastructure:driven-adapters:security-provider')
+    implementation project(':infrastructure:entry-points:reactive-web')
+    testImplementation 'org.springframework:spring-web'
+    //implementation 'org.reactivecommons.utils:object-mapper:0.1.0'
+    implementation project(':infrastructure:driven-adapters:r2dbc-postgresql')
+    implementation project(':domain:model')
+    implementation project(':domain:usecase')
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
     implementation "org.springdoc:springdoc-openapi-starter-webflux-ui:${springdocVersion}"
