@@ -4,18 +4,18 @@ import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
-import org.springframework.boot.context.properties.EnableConfigurationProperties; // <-- IMPORTAR
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.Duration;
+import java.time.Duration; 
 
 @Configuration
 @EnableConfigurationProperties(PostgresqlConnectionProperties.class)
 public class PostgreSQLConnectionPool {
-    // ... (el resto de la clase se mantiene igual)
-    public static final int INITIAL_SIZE = 12;
-    public static final int MAX_SIZE = 15;
+
+    public static final int INITIAL_SIZE = 5;
+    public static final int MAX_SIZE = 10;
     public static final int MAX_IDLE_TIME = 30;
 
     @Bean
@@ -36,6 +36,8 @@ public class PostgreSQLConnectionPool {
                 .maxSize(MAX_SIZE)
                 .maxIdleTime(Duration.ofMinutes(MAX_IDLE_TIME))
                 .validationQuery("SELECT 1")
+                .maxAcquireTime(Duration.ofSeconds(5))
+                .maxCreateConnectionTime(Duration.ofSeconds(8))
                 .build();
 
         return new ConnectionPool(poolConfiguration);
