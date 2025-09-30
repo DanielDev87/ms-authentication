@@ -28,8 +28,10 @@ subprojects {
     }
 
     dependencies {
+        implementation platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
         implementation 'io.projectreactor:reactor-core'
         implementation 'io.projectreactor.addons:reactor-extra'
+        implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
 
         testImplementation 'io.projectreactor.tools:blockhound-junit-platform:1.0.13.RELEASE'

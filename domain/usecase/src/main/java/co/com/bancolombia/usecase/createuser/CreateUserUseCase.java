@@ -1,12 +1,12 @@
 package co.com.bancolombia.usecase.createuser;
+
 import co.com.bancolombia.model.log.gateways.LoggerService;
 import co.com.bancolombia.model.user.User;
 import co.com.bancolombia.model.user.gateways.PasswordEncryptionGateway;
 import co.com.bancolombia.model.user.gateways.UserRepository;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
-import co.com.bancolombia.model.user.gateways.PasswordEncryptionGateway.*;
-
+import reactor.core.scheduler.Schedulers;
 import static co.com.bancolombia.model.constants.BusinessErrorMessageConstants.*;
 import static co.com.bancolombia.model.constants.LogConstants.*;
 
@@ -42,8 +42,9 @@ public class CreateUserUseCase {
 
     private Mono<User> encryptPasswordAndSave(User user) {
         logger.info(ENCRYPTING_PASSWORD, user.getEmail());
-        return passwordEncryptionGateway.encode(user.getPassword())
-                .map(hashedPassword -> user.toBuilder().password(hashedPassword).build())
+        return Mono.fromCallable(() -> passwordEncryptionGateway.encode(user.getPassword()))
+                .publishOn(Schedulers.boundedElastic())
+                .map(hashedPassword -> user.toBuilder().password(String.valueOf(hashedPassword)).build())
                 .flatMap(userRepository::save);
     }
 
